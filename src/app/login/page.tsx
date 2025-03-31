@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { signIn } from "next-auth/react"
+import { getProviders, signIn } from "next-auth/react"
 import Image from "next/image"
 
 // Define a type for the providers with more specific structure
@@ -9,8 +9,8 @@ interface ProviderConfig {
   id: string;
   name: string;
   type: 'oauth' | 'email';
-  signinUrl: string;
-  callbackUrl: string;
+  signinUrl?: string;
+  callbackUrl?: string;
 }
 
 export default function LoginPage() {
@@ -20,12 +20,11 @@ export default function LoginPage() {
   useEffect(() => {
     const fetchProviders = async () => {
       try {
-        const response = await fetch('/api/auth/providers')
-        if (!response.ok) {
-          throw new Error('Failed to fetch providers')
+        const fetchedProviders = await getProviders()
+        if (!fetchedProviders) {
+          throw new Error('No providers found')
         }
-        const fetchedProviders: Record<string, ProviderConfig> = await response.json()
-        setProviders(fetchedProviders)
+        setProviders(fetchedProviders as Record<string, ProviderConfig>)
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         console.error('Provider fetch error:', errorMessage)
