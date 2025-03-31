@@ -1,11 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getProviders, signIn } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import Image from "next/image"
 
+// Define a type for the providers
+type Provider = {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export default function LoginPage() {
-  const [providers, setProviders] = useState<any>(null)
+  const [providers, setProviders] = useState<Record<string, Provider> | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -18,7 +25,7 @@ export default function LoginPage() {
         const providersData = await fetchedProviders.json()
         setProviders(providersData)
       } catch (err) {
-        console.error('Provider fetch error:', err)
+        console.error('Provider fetch error:', err instanceof Error ? err.message : String(err))
         setError('Unable to load authentication providers')
       }
     }
@@ -66,7 +73,7 @@ export default function LoginPage() {
         ) : (
           <>
             <div className="space-y-4">
-              {Object.values(providers).map((provider: any) => {
+              {Object.values(providers).map((provider) => {
                 if (provider.type === 'oauth') {
                   return (
                     <div key={provider.name}>
