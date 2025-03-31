@@ -1,10 +1,18 @@
+"use client";
+
 import { signOut } from "next-auth/react"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 export default function LogoutPage() {
+  const router = useRouter()
+
   const handleLogout = async () => {
     await signOut({ redirect: false })
-    redirect('/')
+    router.push('/')
+  }
+
+  const handleCancel = () => {
+    router.push('/dashboard')
   }
 
   return (
@@ -25,7 +33,7 @@ export default function LogoutPage() {
               Confirm Logout
             </button>
             <button
-              onClick={() => redirect('/dashboard')}
+              onClick={handleCancel}
               className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition"
             >
               Cancel
