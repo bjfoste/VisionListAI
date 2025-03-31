@@ -4,28 +4,31 @@ import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 import Image from "next/image"
 
-// Define a type for the providers
-type Provider = {
+// Define a type for the providers with more specific structure
+interface ProviderConfig {
   id: string;
   name: string;
-  type: string;
+  type: 'oauth' | 'email';
+  signinUrl: string;
+  callbackUrl: string;
 }
 
 export default function LoginPage() {
-  const [providers, setProviders] = useState<Record<string, Provider> | null>(null)
+  const [providers, setProviders] = useState<Record<string, ProviderConfig> | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProviders = async () => {
       try {
-        const fetchedProviders = await fetch('/api/auth/providers')
-        if (!fetchedProviders.ok) {
+        const response = await fetch('/api/auth/providers')
+        if (!response.ok) {
           throw new Error('Failed to fetch providers')
         }
-        const providersData = await fetchedProviders.json()
-        setProviders(providersData)
+        const fetchedProviders: Record<string, ProviderConfig> = await response.json()
+        setProviders(fetchedProviders)
       } catch (err) {
-        console.error('Provider fetch error:', err instanceof Error ? err.message : String(err))
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        console.error('Provider fetch error:', errorMessage)
         setError('Unable to load authentication providers')
       }
     }
@@ -38,7 +41,7 @@ export default function LoginPage() {
 
   const handleEmailSignIn = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const email = (e.target as HTMLFormElement).email.value
+    const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value
     signIn('email', { email, callbackUrl: '/dashboard' })
   }
 
