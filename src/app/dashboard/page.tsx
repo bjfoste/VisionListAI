@@ -42,7 +42,7 @@ export default async function DashboardPage() {
                 Your Listings
               </h2>
               <p className="text-gray-600">
-                You haven't created any listings yet.
+                You haven&apos;t created any listings yet.
               </p>
               <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
                 Create New Listing
