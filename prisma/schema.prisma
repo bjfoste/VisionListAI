@@ -1,4 +1,4 @@
-local// This is your Prisma schema file,
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -19,10 +19,18 @@ model User {
   accounts      Account[]
   sessions      Session[]
   
+  // Credentials for username/password auth
+  username      String?   @unique
+  password      String?
+  
   // Additional user-specific fields
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role          UserRole  @default(USER)
+  
+  // New relationships
+  uploadedImages UploadedImage[]
+  listingGenerations ListingGeneration[]
 }
 
 model Account {
@@ -117,13 +125,16 @@ model UploadedImage {
   
   // Relationship to user
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relationship to listing generation
+  listingGenerationId String?
+  listingGeneration   ListingGeneration? @relation(fields: [listingGenerationId], references: [id])
 }
 
 // Model to track listing generation
 model ListingGeneration {
   id            String   @id @default(cuid())
   userId        String
-  images        UploadedImage[]
   status        ListingStatus
   generatedAt   DateTime @default(now())
   completedAt   DateTime?
@@ -132,6 +143,9 @@ model ListingGeneration {
   
   // Relationship to user
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relationship to images
+  images        UploadedImage[]
 }
 
 // Enum for listing generation status
@@ -140,24 +154,4 @@ enum ListingStatus {
   PROCESSING
   COMPLETED
   FAILED
-}
-
-// Extend User model to include relationships
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  
-  // Additional user-specific fields
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  role          UserRole  @default(USER)
-  
-  // New relationships
-  uploadedImages UploadedImage[]
-  listingGenerations ListingGeneration[]
 }

@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, FormEvent } from "react"
 import { getProviders, signIn } from "next-auth/react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 // Define a type for the providers with more specific structure
 interface ProviderConfig {
   id: string;
   name: string;
-  type: 'oauth' | 'email';
+  type: 'oauth' | 'email' | 'credentials';
   signinUrl?: string;
   callbackUrl?: string;
 }
@@ -16,6 +17,11 @@ interface ProviderConfig {
 export default function LoginPage() {
   const [providers, setProviders] = useState<Record<string, ProviderConfig> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: ''
+  })
+  const router = useRouter()
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -35,7 +41,28 @@ export default function LoginPage() {
   }, [])
 
   const handleOAuthSignIn = (providerId: string) => {
-    signIn(providerId)
+    signIn(providerId, { callbackUrl: '/dashboard' })
+  }
+
+  const handleCredentialsSignIn = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError(null)
+
+    try {
+      const result = await signIn('credentials', {
+        username: credentials.username,
+        password: credentials.password,
+        redirect: false
+      })
+
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    }
   }
 
   const handleEmailSignIn = (e: React.FormEvent<HTMLFormElement>) => {
@@ -103,6 +130,63 @@ export default function LoginPage() {
               })}
             </div>
             
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with username
+                </span>
+              </div>
+            </div>
+
+            <form 
+              onSubmit={handleCredentialsSignIn} 
+              className="space-y-4"
+            >
+              <div>
+                <label htmlFor="username" className="sr-only">Username</label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={credentials.username}
+                  onChange={(e) => setCredentials(prev => ({
+                    ...prev, 
+                    username: e.target.value
+                  }))}
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Username"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={credentials.password}
+                  onChange={(e) => setCredentials(prev => ({
+                    ...prev, 
+                    password: e.target.value
+                  }))}
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Password"
+                />
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Sign In
+                </button>
+              </div>
+            </form>
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
