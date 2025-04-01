@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+local// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -67,6 +67,14 @@ enum UserRole {
   MODERATOR
 }
 
+// Subscription Tier Enum
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
 // Optional: Add a model for additional user-specific data
 model UserProfile {
   id        String   @id @default(cuid())
@@ -79,4 +87,77 @@ model UserProfile {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Model to track user subscriptions and usage
+model UserSubscription {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  tier            SubscriptionTier @default(FREE)
+  currentPeriodStart DateTime       @default(now())
+  currentPeriodEnd DateTime
+  maxListingsPerMonth Int           @default(2)
+  maxImagesPerListing Int           @default(20)
+  
+  // Billing and payment tracking
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+}
+
+// Model to track uploaded images
+model UploadedImage {
+  id          String   @id @default(cuid())
+  userId      String
+  fileName    String
+  fileSize    Int
+  mimeType    String
+  s3Key       String
+  uploadedAt  DateTime @default(now())
+  processedAt DateTime?
+  
+  // Relationship to user
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Model to track listing generation
+model ListingGeneration {
+  id            String   @id @default(cuid())
+  userId        String
+  images        UploadedImage[]
+  status        ListingStatus
+  generatedAt   DateTime @default(now())
+  completedAt   DateTime?
+  aiConfidence  Float?
+  platformListing String?
+  
+  // Relationship to user
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Enum for listing generation status
+enum ListingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Extend User model to include relationships
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Additional user-specific fields
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          UserRole  @default(USER)
+  
+  // New relationships
+  uploadedImages UploadedImage[]
+  listingGenerations ListingGeneration[]
 }
